@@ -27,7 +27,7 @@ A minimalist, clean, and blazingly fast command-line search tool for Arch Linux 
 ### Build & Install
 
 ```bash
-git clone https://github.com/<your-username>/Pacfind.git ~/Projects/CLI/Pacfind
+git clone https://github.com/Leshoraa/Pacfind.git ~/Projects/CLI/Pacfind
 cd ~/Projects/CLI/Pacfind
 ./install.sh
 ```
