@@ -212,7 +212,7 @@ func renderBottomUp(
 
 			// In bottom-up, show overflow notice at top
 			if limit > 0 && len(aurPkgs) > limit {
-				fmt.Printf("  %s... (%d more packages not shown, use -l or omit to see all)%s\n\n",
+				fmt.Printf("  %s... (%d more packages not shown, use -m to see all)%s\n\n",
 					Dim, len(aurPkgs)-limit, Reset)
 			}
 
@@ -238,7 +238,7 @@ func renderBottomUp(
 
 			// In bottom-up, show overflow notice at top
 			if limit > 0 && len(official) > limit {
-				fmt.Printf("  %s... (%d more packages not shown, use -l or omit to see all)%s\n\n",
+				fmt.Printf("  %s... (%d more packages not shown, use -m to see all)%s\n\n",
 					Dim, len(official)-limit, Reset)
 			}
 
@@ -249,13 +249,7 @@ func renderBottomUp(
 		}
 	}
 
-	// 3. Summary Footer
-	dividerLen := width
-	if dividerLen > 80 {
-		dividerLen = 80
-	}
-	fmt.Printf("%s%s%s\n", Dim, strings.Repeat("─", dividerLen), Reset)
-
+	// 3. Summary Footer (Clean, no divider lines)
 	totalOff := len(official)
 	totalAur := len(aurPkgs)
 
@@ -269,7 +263,6 @@ func renderBottomUp(
 		fmt.Printf("%sSummary:%s %d found in AUR\n",
 			Bold, Reset, totalAur)
 	}
-	fmt.Printf("%s%s%s\n", Dim, strings.Repeat("─", dividerLen), Reset)
 }
 
 // renderTopDown renders Official first and AUR second in standard top-to-bottom order
@@ -299,7 +292,7 @@ func renderTopDown(
 			}
 
 			if limit > 0 && len(official) > limit {
-				fmt.Printf("  %s... (%d more packages not shown, use -l or omit to see all)%s\n\n",
+				fmt.Printf("  %s... (%d more packages not shown, use -m to see all)%s\n\n",
 					Dim, len(official)-limit, Reset)
 			}
 		}
@@ -324,18 +317,13 @@ func renderTopDown(
 			}
 
 			if limit > 0 && len(aurPkgs) > limit {
-				fmt.Printf("  %s... (%d more packages not shown, use -l or omit to see all)%s\n\n",
+				fmt.Printf("  %s... (%d more packages not shown, use -m to see all)%s\n\n",
 					Dim, len(aurPkgs)-limit, Reset)
 			}
 		}
 	}
 
-	dividerLen := width
-	if dividerLen > 80 {
-		dividerLen = 80
-	}
-	fmt.Printf("%s%s%s\n", Dim, strings.Repeat("─", dividerLen), Reset)
-
+	// Summary Footer (Clean, no divider lines)
 	totalOff := len(official)
 	totalAur := len(aurPkgs)
 
@@ -349,5 +337,4 @@ func renderTopDown(
 		fmt.Printf("%sSummary:%s %d found in AUR\n",
 			Bold, Reset, totalAur)
 	}
-	fmt.Printf("%s%s%s\n", Dim, strings.Repeat("─", dividerLen), Reset)
 }
