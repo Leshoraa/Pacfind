@@ -19,22 +19,21 @@ type winsize struct {
 
 // Colors holds ANSI escape codes
 var (
-	Reset       = "\033[0m"
-	Bold        = "\033[1m"
-	Dim         = "\033[2m"
-	Cyan        = "\033[1;36m"
-	Blue        = "\033[1;34m"
-	Magenta     = "\033[1;35m"
-	Green       = "\033[0;32m"
-	BoldGreen   = "\033[1;32m"
-	Yellow      = "\033[0;33m"
-	White       = "\033[1;37m"
-	Red         = "\033[1;31m"
-	BoxBorder   = "\033[2m" // Dim clean box borders
+	Reset     = "\033[0m"
+	Bold      = "\033[1m"
+	Dim       = "\033[2m"
+	Cyan      = "\033[1;36m"
+	Blue      = "\033[1;34m"
+	Magenta   = "\033[1;35m"
+	Green     = "\033[0;32m"
+	BoldGreen = "\033[1;32m"
+	Yellow    = "\033[0;33m"
+	White     = "\033[1;37m"
+	Red       = "\033[1;31m"
+	BoxBorder = "\033[2m" // Dim clean box borders
 )
 
 func init() {
-	// Disable colors if NO_COLOR is set or output is not a terminal
 	if os.Getenv("NO_COLOR") != "" {
 		disableColors()
 	}
@@ -78,13 +77,11 @@ func RenderCard(pkg models.Package, width int) {
 		cardWidth = 40
 	}
 
-	// 1. Repo coloring
 	repoColor := Blue
 	if pkg.Repo == "aur" {
 		repoColor = Magenta
 	}
 
-	// 2. Badges & Metrics
 	status := ""
 	if pkg.IsInstalled {
 		status = fmt.Sprintf(" %s[installed]%s", BoldGreen, Reset)
@@ -166,7 +163,9 @@ func wrapText(text string, maxLen int) []string {
 	return lines
 }
 
-// RenderResults prints the full search view with categories and summary
+// RenderResults prints the full search view.
+// By default (topDown = false), results are rendered in bottom-up order (AUR first, Official second,
+// with items descending so the #1 best match is closest to the bottom / prompt).
 func RenderResults(
 	official []models.Package,
 	aurPkgs []models.Package,
@@ -174,10 +173,115 @@ func RenderResults(
 	showAUR bool,
 	limit int,
 	aurErr error,
+	topDown bool,
 ) {
 	width := GetTerminalWidth()
 
-	// 1. Official Repositories
+	if topDown {
+		renderTopDown(official, aurPkgs, showOfficial, showAUR, limit, aurErr, width)
+	} else {
+		renderBottomUp(official, aurPkgs, showOfficial, showAUR, limit, aurErr, width)
+	}
+}
+
+// renderBottomUp renders AUR first and Official second, with items reversed
+// so the most relevant/exact match is closest to the prompt at the bottom!
+func renderBottomUp(
+	official []models.Package,
+	aurPkgs []models.Package,
+	showOfficial bool,
+	showAUR bool,
+	limit int,
+	aurErr error,
+	width int,
+) {
+	// 1. Arch User Repository (AUR) rendered first (scrolled up)
+	if showAUR {
+		fmt.Printf("%s%sARCH USER REPOSITORY (AUR)%s\n", Bold, Magenta, Reset)
+		fmt.Println()
+
+		if aurErr != nil {
+			fmt.Printf("  %sNotice: %v%s\n\n", Yellow, aurErr, Reset)
+		} else if len(aurPkgs) == 0 {
+			fmt.Printf("  %sNo packages found in AUR.%s\n\n", Dim, Reset)
+		} else {
+			displayList := aurPkgs
+			if limit > 0 && len(displayList) > limit {
+				displayList = displayList[:limit]
+			}
+
+			// In bottom-up, show overflow notice at top
+			if limit > 0 && len(aurPkgs) > limit {
+				fmt.Printf("  %s... (%d more packages not shown, use -l or omit to see all)%s\n\n",
+					Dim, len(aurPkgs)-limit, Reset)
+			}
+
+			// Render items in reverse order (least relevant -> most relevant at bottom)
+			for i := len(displayList) - 1; i >= 0; i-- {
+				RenderCard(displayList[i], width)
+			}
+		}
+	}
+
+	// 2. Official Repositories rendered second (closest to bottom / visible on screen)
+	if showOfficial {
+		fmt.Printf("%s%sOFFICIAL REPOSITORIES%s\n", Bold, Cyan, Reset)
+		fmt.Println()
+
+		if len(official) == 0 {
+			fmt.Printf("  %sNo packages found in official repositories.%s\n\n", Dim, Reset)
+		} else {
+			displayList := official
+			if limit > 0 && len(displayList) > limit {
+				displayList = displayList[:limit]
+			}
+
+			// In bottom-up, show overflow notice at top
+			if limit > 0 && len(official) > limit {
+				fmt.Printf("  %s... (%d more packages not shown, use -l or omit to see all)%s\n\n",
+					Dim, len(official)-limit, Reset)
+			}
+
+			// Render items in reverse order (partial matches -> exact match at bottom)
+			for i := len(displayList) - 1; i >= 0; i-- {
+				RenderCard(displayList[i], width)
+			}
+		}
+	}
+
+	// 3. Summary Footer
+	dividerLen := width
+	if dividerLen > 80 {
+		dividerLen = 80
+	}
+	fmt.Printf("%s%s%s\n", Dim, strings.Repeat("─", dividerLen), Reset)
+
+	totalOff := len(official)
+	totalAur := len(aurPkgs)
+
+	if showOfficial && showAUR {
+		fmt.Printf("%sSummary:%s %d found in official repositories, %d found in AUR\n",
+			Bold, Reset, totalOff, totalAur)
+	} else if showOfficial {
+		fmt.Printf("%sSummary:%s %d found in official repositories\n",
+			Bold, Reset, totalOff)
+	} else if showAUR {
+		fmt.Printf("%sSummary:%s %d found in AUR\n",
+			Bold, Reset, totalAur)
+	}
+	fmt.Printf("%s%s%s\n", Dim, strings.Repeat("─", dividerLen), Reset)
+}
+
+// renderTopDown renders Official first and AUR second in standard top-to-bottom order
+func renderTopDown(
+	official []models.Package,
+	aurPkgs []models.Package,
+	showOfficial bool,
+	showAUR bool,
+	limit int,
+	aurErr error,
+	width int,
+) {
 	if showOfficial {
 		fmt.Printf("%s%sOFFICIAL REPOSITORIES%s\n", Bold, Cyan, Reset)
 		fmt.Println()
@@ -201,7 +305,6 @@ func RenderResults(
 		}
 	}
 
-	// 2. Arch User Repository (AUR)
 	if showAUR {
 		fmt.Printf("%s%sARCH USER REPOSITORY (AUR)%s\n", Bold, Magenta, Reset)
 		fmt.Println()
@@ -227,7 +330,6 @@ func RenderResults(
 		}
 	}
 
-	// 3. Summary Footer
 	dividerLen := width
 	if dividerLen > 80 {
 		dividerLen = 80

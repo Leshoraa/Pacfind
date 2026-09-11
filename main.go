@@ -15,7 +15,38 @@ import (
 	"pacfind/internal/ui"
 )
 
-const Version = "1.1.0"
+const Version = "1.2.0"
+
+// reorderArgs allows flags to be placed anywhere in the command line
+// e.g. "pacfind waybar -l 2" -> "pacfind -l 2 waybar"
+func reorderArgs(args []string) []string {
+	var flags []string
+	var pos []string
+	skipNext := false
+
+	for i := 1; i < len(args); i++ {
+		if skipNext {
+			skipNext = false
+			continue
+		}
+		arg := args[i]
+		if strings.HasPrefix(arg, "-") {
+			flags = append(flags, arg)
+			// Flags that take an argument
+			if (arg == "-l" || arg == "--limit") && i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+				flags = append(flags, args[i+1])
+				skipNext = true
+			}
+		} else {
+			pos = append(pos, arg)
+		}
+	}
+	result := make([]string, 0, len(args))
+	result = append(result, args[0])
+	result = append(result, flags...)
+	result = append(result, pos...)
+	return result
+}
 
 func main() {
 	var (
@@ -23,6 +54,7 @@ func main() {
 		flagAUR         bool
 		flagLimit       int
 		flagInteractive bool
+		flagTopDown     bool
 		flagVersion     bool
 	)
 
@@ -30,10 +62,12 @@ func main() {
 	flag.BoolVar(&flagOfficial, "official", false, "Search official repositories only")
 	flag.BoolVar(&flagAUR, "a", false, "Search AUR only")
 	flag.BoolVar(&flagAUR, "aur", false, "Search AUR only")
-	flag.IntVar(&flagLimit, "l", 0, "Limit number of results per repository")
-	flag.IntVar(&flagLimit, "limit", 0, "Limit number of results per repository")
+	flag.IntVar(&flagLimit, "l", 0, "Limit number of results per category")
+	flag.IntVar(&flagLimit, "limit", 0, "Limit number of results per category")
 	flag.BoolVar(&flagInteractive, "i", false, "Interactive selection and installation via fzf")
 	flag.BoolVar(&flagInteractive, "interactive", false, "Interactive selection and installation via fzf")
+	flag.BoolVar(&flagTopDown, "t", false, "Render results top-down instead of default bottom-up")
+	flag.BoolVar(&flagTopDown, "topdown", false, "Render results top-down instead of default bottom-up")
 	flag.BoolVar(&flagVersion, "v", false, "Show version")
 	flag.BoolVar(&flagVersion, "version", false, "Show version")
 
@@ -44,11 +78,14 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  -o, --official     Search official repositories only\n")
 		fmt.Fprintf(os.Stderr, "  -a, --aur          Search AUR only\n")
 		fmt.Fprintf(os.Stderr, "  -l, --limit <num>  Limit number of results per category\n")
+		fmt.Fprintf(os.Stderr, "  -t, --topdown      Render results top-down (default is bottom-up / descending)\n")
 		fmt.Fprintf(os.Stderr, "  -i, --interactive  Select and install package interactively using fzf\n")
 		fmt.Fprintf(os.Stderr, "  -v, --version      Show pacfind version\n")
 		fmt.Fprintf(os.Stderr, "  -h, --help         Show this help message\n")
 	}
 
+	// Reorder args so flags can be anywhere
+	os.Args = reorderArgs(os.Args)
 	flag.Parse()
 
 	if flagVersion {
@@ -119,8 +156,8 @@ func main() {
 		return
 	}
 
-	// Render Clean Card UI
-	ui.RenderResults(officialPkgs, aurPkgs, showOfficial, showAUR, flagLimit, aurErr)
+	// Render Clean Card UI in bottom-up (or top-down) mode
+	ui.RenderResults(officialPkgs, aurPkgs, showOfficial, showAUR, flagLimit, aurErr, flagTopDown)
 }
 
 func runInteractive(official []models.Package, aurPkgs []models.Package) {
@@ -168,7 +205,6 @@ func runInteractive(official []models.Package, aurPkgs []models.Package) {
 
 	out, err := cmd.Output()
 	if err != nil {
-		// Exit or cancelled
 		return
 	}
 
