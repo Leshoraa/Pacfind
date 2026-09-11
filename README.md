@@ -2,31 +2,9 @@
 
 A minimalist, clean, and blazingly fast command-line search tool for Arch Linux and the Arch User Repository (AUR), written in **Go**.
 
-Designed for clarity and speed: no emojis, native binary startup (~2 ms), parallel Goroutines, bottom-up rendering, and a clean box-drawing card interface.
-
-## Preview
-
-```text
-ARCH USER REPOSITORY (AUR)
-
-  ... (111 more packages not shown, use -m to see all)
-
-┌─ waybar-module-music-git - aur/waybar-module-music-git 0.4.1_r235.39e4371-1 (+2, 0.4)
-│ A Waybar module to show & control the current MPRIS media players state
-└──────────────────────────────────────────────────────────
-
-┌─ waybar-module-pacman-updates-git - aur/waybar-module-pacman-updates-git 0.2.14-1 (+9, 0.5)
-│ Waybar module for Arch to show system updates available
-└──────────────────────────────────────────────────────────
-
-OFFICIAL REPOSITORIES
-
-┌─ waybar - extra/waybar 0.15.0-3 [installed]
-│ Highly customizable Wayland bar for Sway and Wlroots based compositors
-└──────────────────────────────────────────────────────────
-
-Summary: 1 found in official repositories, 117 found in AUR
-```
+<p align="center">
+  <img src="assets/preview.png" alt="Pacfind Preview" width="100%">
+</p>
 
 ## Features
 
@@ -66,17 +44,17 @@ Make sure `~/.local/bin` is in your `$PATH`.
 
 ### Basic Search (Default top 6)
 ```bash
-pacfind waybar
+pacfind cava
 ```
 
 ### Show More / All Results
 ```bash
-pacfind -m waybar
+pacfind -m cava
 ```
 
 ### Custom Limit
 ```bash
-pacfind -l 10 waybar
+pacfind -l 10 cava
 ```
 
 ### Search Official Repositories Only
@@ -91,7 +69,7 @@ pacfind -a zen-browser
 
 ### Top-Down Render (Old order)
 ```bash
-pacfind -t waybar
+pacfind -t cava
 ```
 
 ### Interactive Install Mode (fzf)
