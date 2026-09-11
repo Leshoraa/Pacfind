@@ -1,46 +1,84 @@
 # Pacfind
 
-A minimalist, clean, and fast command-line search tool for Arch Linux and the Arch User Repository (AUR).
+A minimalist, clean, and blazingly fast command-line search tool for Arch Linux and the Arch User Repository (AUR), written in **Go**.
 
-Designed for clarity and speed: no emojis, clean ANSI typography, categorized sections, and parallel query execution.
+Designed for clarity and speed: no emojis, native binary startup (~2 ms), parallel Goroutines, and a clean box-drawing card interface.
+
+## Preview
+
+```text
+OFFICIAL REPOSITORIES
+
+┌─ waybar - extra/waybar 0.15.0-3 [installed]
+│ Highly customizable Wayland bar for Sway and Wlroots based compositors
+└──────────────────────────────────────────────────────────
+
+ARCH USER REPOSITORY (AUR)
+
+┌─ waybar-module-pacman-updates-git - aur/waybar-module-pacman-updates-git 0.2.14-1 (+9, 0.5)
+│ Waybar module for Arch to show system updates available
+└──────────────────────────────────────────────────────────
+
+┌─ waybar-module-music-git - aur/waybar-module-music-git 0.4.1_r235.39e4371-1 (+2, 0.4)
+│ A Waybar module to show & control the current MPRIS media players state
+└──────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────
+Summary: 1 found in official repositories, 2 found in AUR
+──────────────────────────────────────────────────────────
+```
 
 ## Features
 
-- **Categorized Sections**: Clearly separates Official Repositories (`core`, `extra`, `multilib`) from the Arch User Repository (`aur`).
-- **Parallel Search**: Executes `pacman -Ss` (local sync DB) and AUR RPC v5 queries concurrently.
-- **Clean Layout**: Zero emojis, consistent indentation, terminal-adaptive dividers, and subtle color highlights.
-- **Installation Detection**: Automatically detects and highlights packages already installed on your system with `[installed]`.
-- **AUR Metrics**: Shows votes, popularity, and `[out-of-date]` flags for AUR packages.
-- **Smart Sorting**: Exact matches first, followed by prefix matches and popularity metrics.
-- **Interactive Mode**: Optional `-i` / `--interactive` flag with `fzf` to pick and install packages directly via `pacman` or `yay`.
+- **Blazingly Fast**: Written in pure Go with zero runtime dependencies. Startup latency is ~2 milliseconds.
+- **Parallel Search**: Concurrently queries local pacman databases (`pacman -Ss`) and the AUR RPC v5 REST API using lightweight goroutines.
+- **Card-Style Interface**: Elegant box-drawing borders (`┌─`, `│`, `└─`), adaptive width wrapping, and subtle color highlights with zero emojis.
+- **Installation Detection**: Highlights packages already installed on your system with `[installed]`.
+- **AUR Community Metrics**: Displays votes, popularity scores, and `[out-of-date]` warning badges.
+- **Interactive Mode**: Built-in `-i` / `--interactive` flag integrating with `fzf` to pick and install packages via `yay` or `pacman`.
 
 ## Installation
 
-Clone the repository and run the install script:
+### Prerequisites
+- [Go](https://go.dev/) 1.22+ (for building)
+- `pacman` and `yay` (Arch Linux)
+- `fzf` (optional, for interactive install mode)
+
+### Build & Install
 
 ```bash
-git clone https://github.com/<your-username>/Pacfind.git ~/Projects/Pacfind
-cd ~/Projects/Pacfind
+git clone https://github.com/<your-username>/Pacfind.git ~/Projects/CLI/Pacfind
+cd ~/Projects/CLI/Pacfind
 ./install.sh
 ```
 
-Ensure `~/.local/bin` is in your `$PATH`.
+Or manually:
+```bash
+go build -ldflags="-s -w" -o pacfind .
+install -m 755 pacfind ~/.local/bin/
+```
+
+Make sure `~/.local/bin` is in your `$PATH`.
 
 ## Usage
 
 ### Basic Search
 ```bash
-pacfind firefox
+pacfind waybar
 ```
 
 ### Search Official Repositories Only
 ```bash
 pacfind -o neovim
+# or
+pacfind --official neovim
 ```
 
 ### Search AUR Only
 ```bash
 pacfind -a zen-browser
+# or
+pacfind --aur zen-browser
 ```
 
 ### Limit Results
@@ -58,12 +96,6 @@ pacfind -i rofi
 pacfind --help
 pacfind --version
 ```
-
-## Requirements
-
-- Python 3.8+
-- Arch Linux (`pacman`, `yay`)
-- `fzf` (optional, required only for interactive mode)
 
 ## License
 
